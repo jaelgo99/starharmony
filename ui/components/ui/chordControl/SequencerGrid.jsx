@@ -1,21 +1,22 @@
 import * as React from "react";
 
 const MAX_FILL_PERCENTAGE = 100;
-// Calculate evenly spaced thresholds for 7 positions
-const STEPS = 7; // 7 scale degrees
-const MIN_FILL_PERCENTAGE = 15; // Lowest visible position
-const STEP = (MAX_FILL_PERCENTAGE - MIN_FILL_PERCENTAGE) / (STEPS - 1); // Divide remaining space evenly
+const STEPS = 7;
+const MIN_FILL_PERCENTAGE = 15;
+const STEP = (MAX_FILL_PERCENTAGE - MIN_FILL_PERCENTAGE) / (STEPS - 1);
 
-const gridData = [
-  { chord: "Gmaj", fillPercentage: 70, isBoxActive: false },
-  { chord: "Amin", fillPercentage: 50, isBoxActive: false },
-  { chord: "Dmin", fillPercentage: 0, isBoxActive: false },
-  { chord: "Amin", fillPercentage: 80, isBoxActive: false },
-  { chord: "Gmaj", fillPercentage: 60, isBoxActive: false },
-  { chord: "Dmin", fillPercentage: 0, isBoxActive: false },
-  { chord: "Gmaj", fillPercentage: 40, isBoxActive: false },
-  { chord: "Amin", fillPercentage: 80, isBoxActive: false },
-];
+const NOTES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+
+// Define the intervals and chord types for each scale degree
+const MAJOR_SCALE = {
+  intervals: [0, 2, 4, 5, 7, 9, 11],
+  chordTypes: ['maj', 'min', 'min', 'maj', 'maj', 'min', 'dim']
+};
+
+const MINOR_SCALE = {
+  intervals: [0, 2, 3, 5, 7, 8, 10],
+  chordTypes: ['min', 'dim', 'maj', 'min', 'min', 'maj', 'maj']
+};
 
 const SCALE_DEGREES = [
   { numeral: "vii°", threshold: MAX_FILL_PERCENTAGE },
@@ -28,23 +29,39 @@ const SCALE_DEGREES = [
 ];
 
 function getNumeral(percentage) {
-  // Find the first degree where percentage is greater than or equal to threshold
   const degree = SCALE_DEGREES.find(d => percentage >= d.threshold - (STEP / 2));
   return degree ? degree.numeral : "I";
 }
 
+function getChordName(numeral, rootNote, scale) {
+  // Convert roman numeral to scale degree (0-6)
+  const numeralMap = { "I": 0, "ii": 1, "iii": 2, "IV": 3, "V": 4, "vi": 5, "vii°": 6 };
+  const degree = numeralMap[numeral] || 0;
+
+  // Get the scale info
+  const scaleInfo = scale === "Major" ? MAJOR_SCALE : MINOR_SCALE;
+  
+  // Calculate the chord root note
+  const rootIndex = NOTES.indexOf(rootNote);
+  const interval = scaleInfo.intervals[degree];
+  const chordRoot = NOTES[(rootIndex + interval) % 12];
+  
+  // Get the chord type
+  const chordType = scaleInfo.chordTypes[degree];
+  
+  return `${chordRoot}${chordType}`;
+}
+
 function snapToNearestThreshold(percentage) {
-  // Find the two closest thresholds
   const sortedThresholds = [...SCALE_DEGREES.map(d => d.threshold)];
   let lower = Math.max(...sortedThresholds.filter(t => t <= percentage));
   let upper = Math.min(...sortedThresholds.filter(t => t >= percentage));
   
-  // If percentage is closer to upper threshold, snap up, otherwise snap down
   const snapped = Math.abs(percentage - upper) < Math.abs(percentage - lower) ? upper : lower;
   return Math.max(MIN_FILL_PERCENTAGE, snapped);
 }
 
-function ChordBox({ item, onDrag }) {
+function ChordBox({ item, onDrag, rootNote, scale }) {
   const boxRef = React.useRef(null);
   const [isDragging, setIsDragging] = React.useState(false);
 
@@ -58,7 +75,6 @@ function ChordBox({ item, onDrag }) {
       const rect = boxRef.current.getBoundingClientRect();
       const mouseY = e.clientY - rect.top;
       const height = rect.height;
-      // Invert the percentage calculation
       const rawPercentage = 100 - (mouseY / height * 100);
       const clampedPercentage = Math.max(MIN_FILL_PERCENTAGE, Math.min(MAX_FILL_PERCENTAGE, rawPercentage));
       const snappedPercentage = snapToNearestThreshold(clampedPercentage);
@@ -87,19 +103,19 @@ function ChordBox({ item, onDrag }) {
     };
   }, [isDragging]);
 
+  const currentNumeral = getNumeral(item.fillPercentage);
+  const chordName = getChordName(currentNumeral, rootNote, scale);
+
   return (
     <div 
       ref={boxRef}
       className="chord-box relative w-full h-full bg-white border border-gray-700 rounded-sm cursor-ns-resize"
       onMouseDown={handleMouseDown}
     >
-      {/* Fill layer */}
       <div 
         className="absolute bottom-0 left-0 right-0 bg-gray-700 transition-height duration-75"
         style={{ height: `${item.fillPercentage}%` }}
       />
-      
-      {/* Label layer */}
       <div 
         className="absolute left-0 right-0 flex items-center justify-center pointer-events-none"
         style={{ 
@@ -108,15 +124,23 @@ function ChordBox({ item, onDrag }) {
         }}
       >
         <span className="text-gray-50 font-medium z-10 select-none">
-          {getNumeral(item.fillPercentage)}
+          {currentNumeral}
         </span>
       </div>
     </div>
   );
 }
 
-function SequencerGrid() {
-  const [gridItems, setGridItems] = React.useState(gridData);
+function SequencerGrid({ numSteps = 16, rootNote = "C", scale = "Major" }) {
+  const [gridItems, setGridItems] = React.useState([]);
+
+  React.useEffect(() => {
+    const newGridItems = Array(numSteps).fill(null).map(() => ({
+      fillPercentage: MIN_FILL_PERCENTAGE,
+      isBoxActive: false
+    }));
+    setGridItems(newGridItems);
+  }, [numSteps]);
 
   const handleDrag = (index, percentage) => {
     setGridItems(items => 
@@ -135,7 +159,37 @@ function SequencerGrid() {
   };
 
   return (
-    <div className="flex flex-col self-start min-h-[173px] min-w-[240px] w-[433px] max-md:max-w-full h-full">
+    <div className="flex flex-col self-start min-h-[173px] w-full">
+      <div className="grid gap-0.5 w-full" style={{ 
+        gridTemplateColumns: `repeat(${numSteps}, minmax(0, 1fr))`
+      }}>
+        {gridItems.map((item, i) => (
+          <div key={i} className="flex flex-col gap-2 items-center min-w-0">
+            <div className="text-sm font-medium leading-5 text-gray-500 truncate w-full text-center">
+              {getChordName(getNumeral(item.fillPercentage), rootNote, scale)}
+            </div>
+            <button
+              onClick={() => handleBoxClick(i)}
+              className={`sequence-box w-full rounded-sm border border-gray-700 border-solid h-[23px] cursor-pointer transition-colors ${
+                item.isBoxActive ? 'active bg-gray-700' : ''
+              }`}
+            />
+          </div>
+        ))}
+      </div>
+      <div className="flex gap-0.5 mt-2 h-[200px]">
+        {gridItems.map((item, index) => (
+          <div key={index} className="flex-1 min-w-0">
+            <ChordBox 
+              item={item} 
+              onDrag={(percentage) => handleDrag(index, percentage)}
+              rootNote={rootNote}
+              scale={scale}
+            />
+          </div>
+        ))}
+      </div>
+
       <style jsx>{`
         .sequence-box:not(.active):hover {
           background-color: rgb(243 244 246);
@@ -144,39 +198,6 @@ function SequencerGrid() {
           background-color: rgb(243 244 246);
         }
       `}</style>
-      <div className="flex gap-0.5 items-start w-full max-md:max-w-full">
-        {gridItems.map((item, i) => (
-          <div
-            key={i}
-            className="flex overflow-hidden flex-col flex-1 shrink justify-center py-px basis-0 fill-gray-500"
-          >
-            <button
-              onClick={() => handleBoxClick(i)}
-              className={`sequence-box flex shrink-0 rounded-sm border border-gray-700 border-solid h-[23px] cursor-pointer transition-colors ${
-                item.isBoxActive ? 'active bg-gray-700' : ''
-              }`}
-            />
-          </div>
-        ))}
-      </div>
-      <div className="flex overflow-hidden flex-1 gap-0.5 mt-2 text-center whitespace-nowrap rounded-sm w-full max-md:max-w-full">
-        {gridItems.map((item, index) => (
-          <div
-            key={index}
-            className="flex overflow-hidden flex-col flex-1 shrink basis-0 h-full"
-          >
-            <div className="flex-1">
-              <ChordBox 
-                item={item} 
-                onDrag={(percentage) => handleDrag(index, percentage)} 
-              />
-            </div>
-            <div className="z-10 self-center mt-2 text-sm font-medium leading-5 text-gray-500">
-              {item.chord}
-            </div>
-          </div>
-        ))}
-      </div>
     </div>
   );
 }

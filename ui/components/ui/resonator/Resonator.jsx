@@ -17,8 +17,8 @@ const bottomControls = [
 
 function Resonator() {
   return (
-    <div className="flex flex-col justify-center self-stretch p-2 my-auto min-w-[240px] w-[240px] h-full">
-      <div className="flex overflow-hidden flex-col pb-2 w-full bg-white rounded border border-gray-300 border-solid shadow-md h-full">
+    <div className="flex flex-col justify-center self-stretch p-2 my-auto min-w-[240px] w-[240px] h-[542px]">
+      <div className="flex overflow-hidden flex-col pb-9 w-full bg-white rounded border border-gray-300 border-solid shadow-md h-full">
         <div className="flex gap-px justify-center items-center w-full text-base leading-6 text-center text-gray-700 whitespace-nowrap px-4 bg-gray-100 border-b border-solid border-b-gray-300">
           <div className="flex shrink-0 self-stretch my-auto w-3 h-3 bg-gray-700 rounded-full fill-gray-700" />
           <div className="gap-2 self-stretch p-2 my-auto">Resonator</div>
@@ -27,14 +27,14 @@ function Resonator() {
         <div className="flex flex-col flex-1 px-4">
           <div className="flex flex-col items-center mt-2.5 w-full">
             <div className="flex flex-col gap-8">
-              <div className="flex justify-center gap-8">
+              <div className="flex justify-center gap-3">
                 {mainControls.slice(0, 2).map((control) => (
                   <div key={control.label} className="w-[80px]">
                     <KnobControl label={control.label} value={control.value} size="large" />
                   </div>
                 ))}
               </div>
-              <div className="flex justify-center gap-8">
+              <div className="flex justify-center gap-3">
                 {mainControls.slice(2, 4).map((control) => (
                   <div key={control.label} className="w-[80px]">
                     <KnobControl label={control.label} value={control.value} size="large" />
@@ -61,7 +61,7 @@ function Resonator() {
             ))}
           </div>
 
-          <div className="flex overflow-hidden flex-col justify-center py-8 mt-2.5 w-full text-sm leading-5 text-center text-gray-700 rounded-sm border border-gray-400 border-solid min-h-[98px]">
+          <div className="flex overflow-hidden flex-col justify-center py-8 mt-8 w-full text-sm leading-5 text-center text-gray-700 rounded-sm border border-gray-400 border-solid min-h-[98px]">
             <div className="flex-1 shrink gap-2 self-stretch p-2 size-full">
               Tool tip goes here
             </div>

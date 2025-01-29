@@ -1,46 +1,91 @@
 import * as React from "react";
-import Slider from "./Slider";
+import { ChevronDown } from 'lucide-react';
+import KnobControl from "../../ui/resonator/KnobControl";
+import DiscreteKnobControl from "../../ui/resonator/DiscreteKnobControl";
 
 function ArpSection() {
   const [isBoxActive, setIsBoxActive] = React.useState(false);
+  const [selectedStyle, setSelectedStyle] = React.useState("Up");
+  const [isStyleOpen, setIsStyleOpen] = React.useState(false);
+  const [rateValue, setRateValue] = React.useState("1/16");
+  const [gateValue, setGateValue] = React.useState(100);
+
+  const arpStyles = ["Up", "Down", "Up/Down", "Down/Up", "Random", "Chord"];
+  const rateOptions = ["1/64", "1/32", "1/16", "1/8", "1/4", "1/2", "1/1"];
 
   return (
-    <div className="flex overflow-hidden flex-col grow shrink pb-2 rounded-sm border-l border-gray-300 border-solid border-l-gray-300 w-[127px]">
+    <div className="flex overflow-hidden flex-col grow shrink pb-2 rounded-sm border-l border-gray-300 border-solid border-l-gray-300 w-[160px]">
       <div className="flex flex-col items-start px-4 w-full text-xs font-medium leading-4 text-center text-gray-700 uppercase whitespace-nowrap">
         <div className="gap-1 self-stretch p-2 border-b-2 border-black">
           Arp
         </div>
       </div>
+      
       <div className="flex gap-2 items-center px-4 mt-4 w-full text-center whitespace-nowrap rounded-sm">
-        <div className="self-stretch my-auto text-xs font-medium leading-4 text-gray-800 uppercase">
-          Style
-        </div>
-        <div className="flex flex-1 shrink gap-10 justify-between items-center self-stretch px-2 py-0.5 my-auto text-xs tracking-tighter text-gray-700 rounded-sm border border border-solid basis-0">
-          <div className="self-stretch my-auto">Up</div>
-          <img
-            loading="lazy"
-            src="https://cdn.builder.io/api/v1/image/assets/5ae0232bf14843d0b398bd703a0fa64e/6526d942db46343a24387fcc6e1ae7ece60cbbe05826a8fd4678743d848577fb?apiKey=5ae0232bf14843d0b398bd703a0fa64e&"
-            alt=""
-            className="object-contain shrink-0 self-stretch my-auto w-5 aspect-square"
-          />
+        <div className="relative flex flex-1">
+          <div
+            className="flex flex-1 gap-1 justify-between items-center self-stretch px-2 py-0.5 my-auto text-xs text-gray-700 rounded-sm border border-solid cursor-pointer hover:bg-gray-200"
+            onClick={() => setIsStyleOpen(!isStyleOpen)}
+          >
+            <div className="self-stretch my-auto">{selectedStyle}</div>
+            <ChevronDown className="h-4 w-4" />
+          </div>
+          
+          {isStyleOpen && (
+            <div className="absolute top-full left-0 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg z-50">
+              {arpStyles.map((style) => (
+                <div
+                  key={style}
+                  className="px-3 py-2 text-xs text-gray-700 hover:bg-gray-100 cursor-pointer"
+                  onClick={() => {
+                    setSelectedStyle(style);
+                    setIsStyleOpen(false);
+                  }}
+                >
+                  {style}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
-      <div className="flex gap-1 items-center pr-3 pl-4 mt-4 w-full">
-        <div className="flex gap-2 items-center self-stretch my-auto w-16">
-          <div className="flex flex-col self-stretch my-auto text-xs font-medium leading-4 text-center text-gray-900 whitespace-nowrap w-[22px]">
+
+      <div className="grid grid-cols-2 gap-x-2 gap-y-4 px-4 mt-4">
+        <div className="flex flex-row items-center gap-4">
+          <div>
+            <DiscreteKnobControl
+              label="Rate"
+              value={rateValue}
+              size="medium"
+              options={rateOptions}
+              onChange={setRateValue}
+            />
+          </div>
+          <div className="flex flex-row items-center gap-2">
             <button
               onClick={() => setIsBoxActive(!isBoxActive)}
               className={`flex gap-2 rounded-sm border border-gray-400 border-solid h-[22px] min-h-[22px] w-[22px] cursor-pointer hover:bg-gray-200 transition-colors ${
                 isBoxActive ? 'bg-gray-700' : ''
               }`}
             />
-            <div className="gap-2 pr-px pl-0.5 mt-2 rounded-sm border border-gray-400 border-solid h-[22px] min-h-[22px] w-[22px]">
+            <div className="gap-2 pr-px pl-0.5 rounded-sm border border-gray-400 border-solid h-[22px] min-h-[22px] w-[22px]">
               ms
             </div>
           </div>
-          <Slider label="Rate" value="1/16" />
         </div>
-        <Slider label="Gate" value="100%" />
+
+        {/* Second grid cell: Empty */}
+        <div className="col-start-1"></div>
+
+        {/* Third grid cell: Gate knob */}
+        <div className="col-start-2 row-start-2">
+          <KnobControl
+            label="Gate"
+            value={gateValue}
+            size="medium"
+            onChange={setGateValue}
+          />
+        </div>
       </div>
     </div>
   );
